@@ -6,12 +6,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -25,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,7 +37,9 @@ import th.ac.kku.cis.lab05_api.ui.theme.Lab05apiTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -43,6 +50,7 @@ import coil.compose.AsyncImage
 import th.ac.kku.cis.lab05_api.model.Pokemon
 import th.ac.kku.cis.lab05_api.viewmodel.PokemonDetailViewModel
 import th.ac.kku.cis.lab05_api.viewmodel.PokemonViewModel
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,16 +78,14 @@ fun PokemonApp(navController: NavHostController = rememberNavController()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Pokemon")
-                },
+                title = { Text("Pokemon", style = MaterialTheme.typography.bodyLarge) },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary,
                 ),
                 navigationIcon = {
                     if (navController.previousBackStackEntry != null) {
-                        IconButton(onClick = {navController.navigateUp()}) {
+                        IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,
                                 contentDescription = "Back Navigation"
@@ -88,6 +94,7 @@ fun PokemonApp(navController: NavHostController = rememberNavController()) {
                     }
                 }
             )
+
         }
     ){
         paddingValues ->
@@ -113,7 +120,7 @@ fun PokemonApp(navController: NavHostController = rememberNavController()) {
 }
 @Composable
 fun PokekonList(
-    navigateUp:() -> Unit,
+    navigateUp: () -> Unit,
     onItemClick: (String) -> Unit,
     pokemonViewModel: PokemonViewModel = viewModel()
 ){
@@ -123,12 +130,10 @@ fun PokekonList(
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 0.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ){
-        items(pokemonList){
-                item: Pokemon ->
+    ) {
+        items(pokemonList) { item: Pokemon ->
             PokemonItem(item, onClick = onItemClick)
         }
-
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,25 +151,33 @@ fun PokemonItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
-        onClick = {
-                  //Toast.makeText(context, pokemon.name, Toast.LENGTH_SHORT).show()
-            onClick(pokemonId)
-        },
+        onClick = { onClick(pokemonId) },
         modifier = Modifier
-            .size(width = 100.dp, height = 100.dp)
+            .size(width = 120.dp, height = 150.dp)
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .padding(14.dp)
+                .padding(8.dp)
                 .fillMaxWidth(),
         ) {
             AsyncImage(
                 model = pokemonImage,
-                contentDescription = "Translated description of what the image contains"
+                contentDescription = "Pokemon Image",
+                modifier = Modifier
+                    .size(80.dp, 80.dp)
+                    .clip(CircleShape)
             )
-            Text(text = pokemon.name)
+            Text(
+                text = pokemon.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .widthIn(max = 80.dp)
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+            )
         }
     }
 
@@ -172,12 +185,43 @@ fun PokemonItem(
 
 @Composable
 fun PokemonDetail(
-    pokemonId:String?,
+    pokemonId: String?,
     pokemonDetailViewModel: PokemonDetailViewModel = viewModel(),
-    navController: NavHostController = rememberNavController()
-){
-    Text(text = "PokemonDetailPage")
+    navController: NavHostController
+) {
+    val pokemonDetail by pokemonDetailViewModel.pokemonDetail.observeAsState()
+
+    LaunchedEffect(pokemonId) {
+        if (pokemonId != null) {
+            pokemonDetailViewModel.fetchPokemonDetail(pokemonId)
+        }
+    }
+
+    if (pokemonDetail != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(text = "Name: ${pokemonDetail!!.name}")
+            Text(text = "Height: ${pokemonDetail!!.height}")
+            Text(text = "Weight: ${pokemonDetail!!.weight}")
+
+            // Displaying Pokemon types
+            pokemonDetail!!.types?.let { types ->
+                Text(text = "Type: ${types.joinToString(", ")}")
+            }
+
+            // Add other details as needed
+        }
+    } else {
+        // Handle loading state or error state if needed
+        Text(text = "Loading...")
+    }
 }
+
+
+
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {

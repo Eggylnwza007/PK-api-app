@@ -9,7 +9,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import th.ac.kku.cis.lab05_api.api.PokemonApi
+import PokemonApi
 import th.ac.kku.cis.lab05_api.model.Pokemon
 import th.ac.kku.cis.lab05_api.model.PokemonList
 
